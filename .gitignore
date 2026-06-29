@@ -1,0 +1,19 @@
+# Temporários
+*.tmp
+*.bak
+*.swp
+*~
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dados sensíveis — jamais versionar
+*.pcap
+*.cap
+loot/
+credentials/
