@@ -1,0 +1,67 @@
+<!--
+  Regras Wazuh — GTFOBins: Binários de Rede (Linux)
+  Cobertura: curl, wget, nc, socat (em construção)
+  Requer: auditd configurado conforme docs/wazuh-setup.md
+-->
+
+<group name="lolbins,gtfobins,linux,network">
+
+  <!-- curl executado por conta de serviço web (uid 33=www-data, 65534=nobody, 99=apache) -->
+  <rule id="100200" level="14">
+    <if_group>auditd</if_group>
+    <field name="audit.command">curl</field>
+    <field name="audit.uid" type="pcre2">^(33|65534|99)$</field>
+    <description>curl executado por conta de servico web — possivel RCE ou webshell ativa</description>
+    <mitre>
+      <id>T1105</id>
+      <id>T1059.004</id>
+    </mitre>
+  </rule>
+
+  <!-- curl com pipe para interpretador (execução de payload em memória) -->
+  <rule id="100201" level="12">
+    <if_group>auditd</if_group>
+    <field name="audit.command">curl</field>
+    <field name="audit.execve" type="pcre2">bash|/sh|python|perl|ruby|php</field>
+    <description>curl com pipe para interpretador — possivel execucao de payload em memoria sem toque em disco</description>
+    <mitre>
+      <id>T1105</id>
+      <id>T1059.004</id>
+    </mitre>
+  </rule>
+
+  <!-- curl acessando arquivo local via schema file:// -->
+  <rule id="100202" level="12">
+    <if_group>auditd</if_group>
+    <field name="audit.command">curl</field>
+    <field name="audit.execve" type="pcre2">file://</field>
+    <description>curl usando schema file:// — possivel leitura de arquivo sensivel ou abuso de SSRF</description>
+    <mitre>
+      <id>T1005</id>
+      <id>T1083</id>
+    </mitre>
+  </rule>
+
+  <!-- curl enviando arquivo para servidor externo via -T ou --upload-file -->
+  <rule id="100203" level="11">
+    <if_group>auditd</if_group>
+    <field name="audit.command">curl</field>
+    <field name="audit.execve" type="pcre2">-T\s|--upload-file</field>
+    <description>curl enviando arquivo para servidor externo — possivel exfiltracao de dados</description>
+    <mitre>
+      <id>T1048.003</id>
+    </mitre>
+  </rule>
+
+  <!-- curl com validacao SSL desabilitada (-k ou --insecure) -->
+  <rule id="100204" level="9">
+    <if_group>auditd</if_group>
+    <field name="audit.command">curl</field>
+    <field name="audit.execve" type="pcre2">\s-k(\s|$)|--insecure</field>
+    <description>curl com SSL desabilitado — comum em comunicacao com C2 usando certificado autoassinado</description>
+    <mitre>
+      <id>T1071.001</id>
+    </mitre>
+  </rule>
+
+</group>

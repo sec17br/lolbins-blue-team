@@ -1,19 +1,25 @@
 # LOLBins Blue Team Guide
 
-> Referência consolidada para detecção de técnicas **Living Off The Land** no Wazuh — Linux (GTFOBins) e Windows (LOLBAS).
+Documentação de referência para equipes de segurança defensiva sobre técnicas de Living Off The Land (LotL) em ambientes Linux e Windows, com foco em detecção via Wazuh.
 
 ---
 
-## O que é este projeto?
+## Contexto
 
-Binários legítimos do sistema operacional são rotineiramente abusados por atacantes para executar código, fazer download de payloads, escalar privilégios e exfiltrar dados — sem instalar nenhum software malicioso. Essa técnica é conhecida como **Living Off The Land (LotL)**.
+Atacantes experientes evitam instalar ferramentas externas nos sistemas comprometidos. Em vez disso, abusam de binários legítimos já presentes no sistema operacional para executar código, transferir arquivos, escalar privilégios e exfiltrar dados. Essa abordagem, conhecida como Living Off The Land, dificulta a detecção por antivírus e soluções baseadas em hash, já que os binários utilizados são assinados digitalmente e considerados confiáveis pelo sistema.
 
-Este repositório cruza:
+Este projeto cruza dois repositórios de referência ofensiva:
 
-- **[GTFOBins](https://gtfobins.org/)** — binários Unix/Linux abusáveis
-- **[LOLBAS](https://lolbas-project.github.io/)** — binários/scripts/libs Windows abusáveis
+- GTFOBins (https://gtfobins.org) — binários Unix/Linux abusáveis
+- LOLBAS (https://lolbas-project.github.io) — binários, scripts e bibliotecas Windows abusáveis
 
-…com **detecção prática no [Wazuh](https://wazuh.com/)**, incluindo regras XML prontas, mapeamento MITRE ATT&CK e orientação sobre falsos positivos.
+O resultado é uma documentação orientada ao blue team: para cada binário, explicamos como o ataque funciona na prática, quais sinais procurar, como configurar regras no Wazuh e como reduzir falsos positivos.
+
+---
+
+## Princípio orientador
+
+Entender o ataque é pré-requisito para detectá-lo bem. Uma regra criada sem compreensão da técnica tende a gerar ruído alto ou cobertura insuficiente. Por isso, cada entrada deste projeto descreve o comportamento ofensivo com exemplos reais antes de propor qualquer controle de detecção.
 
 ---
 
@@ -22,109 +28,76 @@ Este repositório cruza:
 ```
 lolbins-blue-team/
 ├── docs/
-│   ├── methodology.md       # Como funcionam LOLBins e os contextos de abuso
-│   ├── wazuh-setup.md       # Configurar auditd + Sysmon + Wazuh
-│   └── mitre-mapping.md     # Tabela cruzada MITRE ATT&CK
+│   ├── methodology.md       # Como funcionam LOLBins, contextos de abuso e modelo de detecção
+│   ├── wazuh-setup.md       # Configuração de auditd, Sysmon e importação de regras
+│   └── mitre-mapping.md     # Tabela cruzada com MITRE ATT&CK
 ├── linux/
-│   ├── execution/           # Interpretadores e executores de código
+│   ├── execution/           # Interpretadores e executores de código arbitrário
 │   ├── file-operations/     # Leitura, escrita e manipulação de arquivos
-│   ├── network/             # Download, upload, shells reversos
-│   ├── privesc/             # Escalada de privilégios (sudo, SUID, capabilities)
-│   └── data-exfil/          # Exfiltração de dados
+│   ├── network/             # Download, upload, shells reversos, tunelamento
+│   ├── privesc/             # Escalada de privilégios via sudo, SUID e capabilities
+│   └── data-exfil/          # Exfiltração de dados por canais alternativos
 ├── windows/
-│   ├── execution/           # Execução de código via binários nativos
-│   ├── download/            # Transferência de arquivos
-│   ├── awl-bypass/          # Bypass de Application Whitelist
-│   ├── dump/                # Dump de credenciais e memória
-│   └── uac-bypass/          # Bypass de UAC
+│   ├── execution/           # Execução de código via binários nativos do Windows
+│   ├── download/            # Transferência de arquivos de entrada
+│   ├── awl-bypass/          # Bypass de Application Whitelist (AppLocker, WDAC)
+│   ├── dump/                # Extração de credenciais e memória de processos
+│   └── uac-bypass/          # Elevação de privilégios sem prompt de UAC
 ├── wazuh-rules/
-│   ├── linux/               # Regras XML para auditd/syslog
-│   └── windows/             # Regras XML para Sysmon/WEL
-└── sigma/                   # Regras Sigma (multi-SIEM)
+│   ├── linux/               # Regras XML para eventos auditd e syslog
+│   └── windows/             # Regras XML para Sysmon e Windows Event Log
+└── sigma/                   # Regras Sigma para portabilidade entre SIEMs
 ```
 
 ---
 
-## Formato de cada entrada
+## Como usar as regras Wazuh
 
-Cada binário tem seu próprio `.md` com:
-
-1. **Descrição** — o que o binário faz legitimamente
-2. **Como o atacante usa** — técnicas documentadas com exemplos reais
-3. **Sinais de detecção** — o que procurar (processo, args, parent, rede)
-4. **Regra Wazuh** — XML pronto para importar
-5. **Falsos positivos** — como reduzir ruído
-6. **Referências** — links GTFOBins/LOLBAS + MITRE ATT&CK
-
----
-
-## Instalando as regras no Wazuh
+Copie os arquivos XML para o diretório de regras do Wazuh Manager e recarregue:
 
 ```bash
-# Copie as regras para o manager
 cp wazuh-rules/linux/*.xml /var/ossec/etc/rules/
 cp wazuh-rules/windows/*.xml /var/ossec/etc/rules/
-
-# Teste a sintaxe
-/var/ossec/bin/wazuh-logtest
-
-# Recarregue
 systemctl restart wazuh-manager
 ```
 
-Veja [docs/wazuh-setup.md](docs/wazuh-setup.md) para configuração completa de auditd e Sysmon.
+Consulte docs/wazuh-setup.md para a configuração completa de auditd (Linux) e Sysmon (Windows).
 
 ---
 
 ## Cobertura atual
 
-### Linux (GTFOBins)
+### Linux
 
-| Binário | Shell | Cmd | Rev Shell | File R/W | Download | Upload | Privesc |
-|---------|:-----:|:---:|:---------:|:--------:|:--------:|:------:|:-------:|
-| bash    | ✅ | ✅ | ✅ | — | — | — | — |
-| curl    | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| wget    | — | — | ✅ | — | ✅ | — | — |
-| python3 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| find    | ✅ | ✅ | — | ✅ | — | — | ✅ |
-| vim     | ✅ | ✅ | — | ✅ | — | — | ✅ |
-| tar     | ✅ | ✅ | — | — | — | — | ✅ |
-| nc/ncat | — | — | ✅ | ✅ | ✅ | ✅ | — |
-| socat   | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
-| docker  | ✅ | ✅ | — | ✅ | — | — | ✅ |
+| Binário | Categorias cobertas |
+|---------|---------------------|
+| curl | Download, upload, exfiltração, shell reverso |
+| wget | Em breve |
+| python3 | Em breve |
+| bash | Em breve |
+| nc/ncat | Em breve |
 
-### Windows (LOLBAS)
+### Windows
 
-| Binário | Execute | Download | AWL Bypass | Dump | UAC Bypass |
-|---------|:-------:|:--------:|:----------:|:----:|:----------:|
-| certutil.exe     | — | ✅ | — | — | — |
-| rundll32.exe     | ✅ | — | ✅ | — | — |
-| mshta.exe        | ✅ | ✅ | ✅ | — | — |
-| regsvr32.exe     | ✅ | — | ✅ | — | — |
-| msbuild.exe      | ✅ | — | ✅ | — | — |
-| bitsadmin.exe    | — | ✅ | — | — | — |
-| wmic.exe         | ✅ | — | — | — | — |
-| powershell.exe   | ✅ | ✅ | ✅ | ✅ | — |
-| installutil.exe  | ✅ | — | ✅ | — | — |
-| ntdsutil.exe     | — | — | — | ✅ | — |
+| Binário | Categorias cobertas |
+|---------|---------------------|
+| certutil.exe | Download, encode/decode, Alternate Data Streams |
+| rundll32.exe | Em breve |
+| mshta.exe | Em breve |
+| msbuild.exe | Em breve |
+| powershell.exe | Em breve |
 
 ---
 
-## Contribuindo
+## Referências principais
 
-Veja [CONTRIBUTING.md](CONTRIBUTING.md). O template para novas entradas está em [docs/template.md](docs/template.md).
-
----
-
-## Referências
-
-- [GTFOBins](https://gtfobins.org/) — @GTFOBins
-- [LOLBAS Project](https://lolbas-project.github.io/) — @lolbas_project
-- [MITRE ATT&CK](https://attack.mitre.org/)
-- [Wazuh Documentation](https://documentation.wazuh.com/)
-- [Sigma Rules](https://github.com/SigmaHQ/sigma)
-- [InternalAllTheThings](https://swisskyrepo.github.io/InternalAllTheThings/) — AD/Internal pentest
+- GTFOBins: https://gtfobins.org
+- LOLBAS Project: https://lolbas-project.github.io
+- MITRE ATT&CK: https://attack.mitre.org
+- Wazuh Documentation: https://documentation.wazuh.com
+- Sigma Rules: https://github.com/SigmaHQ/sigma
+- InternalAllTheThings: https://swisskyrepo.github.io/InternalAllTheThings
 
 ---
 
-> **Aviso legal:** Este material destina-se exclusivamente a equipes de segurança defensiva. Os exemplos de ataque são reproduzidos para fins de detecção.
+Este material destina-se exclusivamente a equipes de segurança defensiva. Os exemplos de ataque são reproduzidos para fins didáticos e de detecção.

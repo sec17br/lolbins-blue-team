@@ -1,0 +1,55 @@
+<!--
+  Regras Wazuh — LOLBAS: Download de Arquivos (Windows)
+  Cobertura: certutil.exe, bitsadmin.exe (em construção)
+  Requer: Sysmon configurado conforme docs/wazuh-setup.md
+  Sysmon Event IDs usados: 1 (Process Create), 3 (Network Connect)
+-->
+
+<group name="lolbins,lolbas,windows,download">
+
+  <!-- certutil com -urlcache: download de arquivo externo -->
+  <rule id="100300" level="14">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.image" type="pcre2">(?i)certutil\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)-urlcache</field>
+    <description>certutil.exe usado para download de arquivo — possivel ingress tool transfer</description>
+    <mitre>
+      <id>T1105</id>
+    </mitre>
+  </rule>
+
+  <!-- certutil com -decode ou -decodehex: reconstrucao de payload ofuscado -->
+  <rule id="100301" level="12">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.image" type="pcre2">(?i)certutil\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)-(decode|decodehex)</field>
+    <description>certutil.exe decodificando arquivo — possivel reconstrucao de payload ofuscado em disco</description>
+    <mitre>
+      <id>T1140</id>
+      <id>T1027.013</id>
+    </mitre>
+  </rule>
+
+  <!-- certutil iniciando conexao de rede (Sysmon Event ID 3) -->
+  <rule id="100302" level="13">
+    <if_group>sysmon_event3</if_group>
+    <field name="win.eventdata.image" type="pcre2">(?i)certutil\.exe$</field>
+    <description>certutil.exe iniciando conexao de rede — verificar destino e contexto de execucao</description>
+    <mitre>
+      <id>T1105</id>
+      <id>T1071.001</id>
+    </mitre>
+  </rule>
+
+  <!-- certutil renomeado: OriginalFileName difere do nome do processo -->
+  <rule id="100303" level="14">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.originalFileName" type="pcre2">(?i)CertUtil\.exe</field>
+    <field name="win.eventdata.image" type="pcre2" negate="yes">(?i)certutil\.exe$</field>
+    <description>certutil.exe executado com nome alterado — tentativa de bypass por renomeacao de processo</description>
+    <mitre>
+      <id>T1036.003</id>
+    </mitre>
+  </rule>
+
+</group>
