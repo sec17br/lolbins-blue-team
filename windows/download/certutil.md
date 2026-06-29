@@ -9,7 +9,9 @@
 
 ## O que é o certutil.exe
 
-O certutil.exe é uma ferramenta de linha de comando do Windows para gerenciamento de infraestrutura de chaves públicas (PKI). Faz parte do sistema operacional desde o Windows XP e está presente em todas as versões do Windows até hoje, incluindo Server. Suas funções legítimas incluem exibir informações sobre certificados digitais, instalar e remover certificados, fazer download de CRLs (Certificate Revocation Lists) e codificar/decodificar arquivos em base64 e hexadecimal.
+O certutil.exe é uma ferramenta de linha de comando do Windows para gerenciamento de infraestrutura de chaves públicas (PKI). Faz parte do sistema operacional desde o Windows XP e está presente em todas as versões do Windows até hoje, incluindo Server.
+
+Suas funções legítimas incluem exibir informações sobre certificados digitais, instalar e remover certificados, fazer download de CRLs (Certificate Revocation Lists) e codificar/decodificar arquivos em base64 e hexadecimal.
 
 O que torna o certutil tão atraente para atacantes é a combinação de três fatores: está presente em praticamente todo sistema Windows sem necessidade de instalação adicional, é assinado pela Microsoft, e possui funcionalidades de rede e manipulação de arquivos que vão muito além do que a maioria dos administradores espera de uma ferramenta de certificados.
 
