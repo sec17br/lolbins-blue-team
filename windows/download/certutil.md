@@ -1,8 +1,11 @@
 # certutil.exe
 
 **Plataforma:** Windows (todas as versões a partir do XP)
+
 **Categorias:** Download de arquivos, Encode/Decode, Alternate Data Streams, Bypass de detecção
+
 **MITRE ATT&CK:** T1105 (Ingress Tool Transfer), T1027.013 (Obfuscated Files — Encoding), T1564.004 (Alternate Data Streams), T1140 (Deobfuscate/Decode Files)
+
 **Referência ofensiva:** https://lolbas-project.github.io/lolbas/Binaries/Certutil/
 
 ---

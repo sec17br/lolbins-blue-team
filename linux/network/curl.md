@@ -1,8 +1,11 @@
 # curl
 
 **Plataforma:** Linux / macOS / Windows (versões recentes)
+
 **Categorias:** Download, Upload, Exfiltração, Shell reverso, Tunelamento
+
 **MITRE ATT&CK:** T1105 (Ingress Tool Transfer), T1048.003 (Exfiltration Over Alternative Protocol), T1071.001 (Web Protocols)
+
 **Referência ofensiva:** https://gtfobins.org/gtfobins/curl/
 
 ---
